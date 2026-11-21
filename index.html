@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Look Up — Stargazing & the Night Sky</title>
+<meta name="description" content="A quiet guide to stargazing: why looking up matters, how wonder grows, famous constellations to find, and how to start tonight.">
+<style>
+  :root {
+    --bg: #050810;
+    --bg2: #0a0f1e;
+    --fg: #e8ecf4;
+    --muted: #9aa6c0;
+    --dim: #6b7690;
+    --accent: #f4c95d;
+    --accent2: #a78bfa;
+    --accent3: #7dd3fc;
+    --card: rgba(255,255,255,0.045);
+    --border: rgba(255,255,255,0.09);
+    --glow: rgba(244,201,93,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3 { font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif; font-weight: 500; letter-spacing: -0.01em; }
+  canvas#stars { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .nebula {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(123,92,255,0.18), transparent 70%),
+      radial-gradient(ellipse 50% 35% at 80% 70%, rgba(125,211,252,0.12), transparent 70%),
+      radial-gradient(ellipse 40% 30% at 50% 90%, rgba(244,201,93,0.08), transparent 70%);
+  }
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 2rem;
+    backdrop-filter: blur(12px);
+    background: rgba(5,8,16,0.45);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-family: "Iowan Old Style", Georgia, serif; font-size: 1.25rem; color: var(--fg); text-decoration: none; letter-spacing: 0.02em; }
+  .logo span { color: var(--accent); }
+  nav ul { list-style: none; display: flex; gap: 1.6rem; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .25s; }
+  nav a:hover { color: var(--fg); }
+  @media (max-width: 640px) { nav ul { display: none; } }
+
+  main, header, footer { position: relative; z-index: 1; }
+
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 7rem 1.5rem 4rem;
+  }
+  .eyebrow {
+    font-size: 0.78rem; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 1.6rem; opacity: 0; animation: fadeUp 1s .2s forwards;
+  }
+  .hero h1 {
+    font-size: clamp(3.2rem, 11vw, 7.5rem);
+    line-height: 1; margin-bottom: 1.2rem;
+    background: linear-gradient(180deg, #ffffff 0%, #c9d3e8 60%, #7dd3fc 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    opacity: 0; animation: fadeUp 1.2s .4s forwards;
+  }
+  .hero .sub {
+    max-width: 640px; font-size: 1.15rem; color: var(--muted); margin-bottom: 2.6rem;
+    opacity: 0; animation: fadeUp 1.2s .7s forwards;
+  }
+  .cta {
+    display: inline-flex; align-items: center; gap: .6rem;
+    padding: .9rem 1.9rem; border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), #e8a93a);
+    color: #1a1200; font-weight: 600; text-decoration: none;
+    box-shadow: 0 8px 30px var(--glow);
+    transition: transform .2s, box-shadow .2s;
+    opacity: 0; animation: fadeUp 1.2s 1s forwards;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px var(--glow); }
+  .scroll-hint {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    font-size: .75rem; letter-spacing: .25em; text-transform: uppercase; color: var(--dim);
+    animation: bob 2.4s infinite;
+  }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(24px);} to { opacity:1; transform: translateY(0);} }
+  @keyframes bob { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(8px);} }
+
+  section { padding: 6rem 1.5rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: .78rem; letter-spacing: .32em; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 1rem;
+  }
+  .section-title { font-size: clamp(2rem, 5vw, 3.2rem); margin-bottom: 1.2rem; }
+  .section-lede { max-width: 720px; color: var(--muted); font-size: 1.1rem; margin-bottom: 3rem; }
+
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity .9s, transform .9s; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Why */
+  .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 1.4rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+    padding: 1.8rem 1.6rem; backdrop-filter: blur(6px);
+    transition: transform .3s, border-color .3s, box-shadow .3s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: rgba(244,201,93,0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+  .card .icon { font-size: 1.6rem; margin-bottom: 1rem; color: var(--accent); }
+  .card h3 { font-size: 1.35rem; margin-bottom: .5rem; }
+  .card p { color: var(--muted); font-size: .95rem; }
+
+  /* Wonder */
+  .wonder-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  @media (max-width: 760px) { .wonder-wrap { grid-template-columns: 1fr; } }
+  .quote {
+    font-family: "Iowan Old Style", Georgia, serif; font-style: italic;
+    font-size: 1.6rem; line-height: 1.4; color: var(--fg);
+    border-left: 2px solid var(--accent); padding-left: 1.6rem;
+  }
+  .quote cite { display: block; margin-top: 1rem; font-style: normal; font-size: .85rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .wonder-list { list-style: none; }
+  .wonder-list li { padding: .9rem 0; border-bottom: 1px solid var(--border); color: var(--muted); display: flex; gap: .9rem; }
+  .wonder-list li:last-child { border-bottom: none; }
+  .wonder-list .n { color: var(--accent2); font-family: "Iowan Old Style", Georgia, serif; font-size: 1.1rem; min-width: 1.6rem; }
+
+  /* Constellations */
+  .const-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.6rem; }
+  .const-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 1.6rem; display: flex; flex-direction: column; gap: 1rem; }
+  .const-card svg { width: 100%; height: 160px; }
+  .const-card h3 { font-size: 1.4rem; }
+  .const-card .meta { font-size: .78rem; letter-spacing: .18em; text-transform: uppercase; color: var(--accent3); }
+  .const-card p { color: var(--muted); font-size: .92rem; }
+  .star { fill: #fff; }
+  .star.big { fill: var(--accent); }
+  .line { stroke: rgba(255,255,255,0.25); stroke-width: 1; }
+
+  /* Guide */
+  .guide { counter-reset: step; }
+  .step {
+    display: grid; grid-template-columns: 64px 1fr; gap: 1.4rem;
+    padding: 1.6rem 0; border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid var(--accent); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Iowan Old Style", Georgia, serif; font-size: 1.3rem;
+  }
+  .step h3 { font-size: 1.25rem; margin-bottom: .35rem; }
+  .step p { color: var(--muted); font-size: .95rem; }
+
+  footer {
+    padding: 3rem 1.5rem; text-align: center; color: var(--dim);
+    font-size: .85rem; border-top: 1px solid var(--border);
+  }
+  footer .big { font-family: "Iowan Old Style", Georgia, serif; font-size: 1.6rem; color: var(--fg); margin-bottom: .6rem; }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="nebula"></div>
+
+<nav>
+  <a class="logo" href="#top">Look<span>·</span>Up</a>
+  <ul>
+    <li><a href="#why">Why</a></li>
+    <li><a href="#wonder">Wonder</a></li>
+    <li><a href="#constellations">Constellations</a></li>
+    <li><a href="#guide">Begin tonight</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <div class="eyebrow">A field guide to the night sky</div>
+  <h1>Look Up</h1>
+  <p class="sub">The universe is not somewhere else. It is right above you, every clear night, waiting for the one thing it has always asked of us: attention.</p>
+  <a class="cta" href="#guide">Begin tonight →</a>
+  <div class="scroll-hint">scroll</div>
+</header>
+
+<main>
+  <section id="why">
+    <div class="container">
+      <div class="section-label reveal">01 · Why</div>
+      <h2 class="section-title reveal">Why looking up matters</h2>
+      <p class="section-lede reveal">We spend our days looking down — at screens, sidewalks, schedules. The sky asks for the opposite. A few minutes of looking up changes the shape of a day.</p>
+      <div class="why-grid">
+        <div class="card reveal">
+          <div class="icon">✦</div>
+          <h3>Perspective</h3>
+          <p>Your worries are real, but they are small against 100 billion stars. Looking up does not erase problems; it right-sizes them.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon">☉</div>
+          <h3>Connection</h3>
+          <p>The same constellations guided sailors, farmers, and dreamers for millennia. You are joining a very old conversation.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon">∞</div>
+          <h3>Humility</h3>
+          <p>Awe is the feeling of meeting something larger than your understanding. The night sky is the most reliable source of it we have.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon">☾</div>
+          <h3>Presence</h3>
+          <p>Stargazing rewards stillness. For twenty minutes, nothing pings, nothing scrolls. Just you and the dark.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon">✨</div>
+          <h3>Imagination</h3>
+          <p>Every constellation is a story someone once told to make sense of the dark. The sky is a library written in light.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon">✧</div>
+          <h3>Wonder</h3>
+          <p>Wonder is not a feeling that happens to you. It is a habit you practice. Looking up is the practice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="wonder">
+    <div class="container">
+      <div class="section-label reveal">02 · Wonder</div>
+      <h2 class="section-title reveal">How curiosity grows when we stargaze</h2>
+      <div class="wonder-wrap">
+        <div>
+          <p class="section-lede reveal" style="margin-bottom:1.6rem;">Wonder is a muscle. The first night you look up, you see points of light. The hundredth night, you see neighbors, distances, histories, and a home you did not know you had.</p>
+          <blockquote class="quote reveal">
+            "The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself."
+            <cite>— Carl Sagan</cite>
+          </blockquote>
+        </div>
+        <ul class="wonder-list reveal">
+          <li><span class="n">01</span><span>Questions beget questions. "What is that bright one?" becomes "How far is it?" becomes "What is it made of?"</span></li>
+          <li><span class="n">02</span><span>Pattern recognition wakes up. You start seeing shapes, then stories, then seasons, then time.</span></li>
+          <li><span class="n">03</span><span>Slowness becomes a skill. Your eyes need twenty minutes to fully adapt; patience is rewarded with more stars.</span></li>
+          <li><span class="n">04</span><span>Science and poetry stop fighting. A star is both a burning sphere of plasma and a wish. Both are true.</span></li>
+          <li><span class="n">05</span><span>You remember you are part of something. The iron in your blood was forged in a star that died before the Sun was born.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="constellations">
+    <div class="container">
+      <div class="section-label reveal">03 · Find</div>
+      <h2 class="section-title reveal">Famous constellations to find</h2>
+      <p class="section-lede reveal">Start with these six. Each is bright, distinctive, and a doorway to a hundred more.</p>
+      <div class="const-grid">
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <line class="line" x1="100" y1="25" x2="55" y2="60"/>
+            <line class="line" x1="100" y1="25" x2="145" y2="60"/>
+            <line class="line" x1="55" y1="60" x2="70" y2="105"/>
+            <line class="line" x1="145" y1="60" x2="130" y2="105"/>
+            <line class="line" x1="70" y1="105" x2="100" y2="105"/>
+            <line class="line" x1="100" y1="105" x2="130" y2="105"/>
+            <line class="line" x1="70" y1="105" x2="60" y2="150"/>
+            <line class="line" x1="130" y1="105" x2="140" y2="150"/>
+            <line class="line" x1="100" y1="105" x2="100" y2="125"/>
+            <circle class="star big" cx="55" cy="60" r="3.5"/>
+            <circle class="star big" cx="145" cy="60" r="3"/>
+            <circle class="star" cx="70" cy="105" r="3"/>
+            <circle class="star" cx="100" cy="105" r="3"/>
+            <circle class="star" cx="130" cy="105" r="3"/>
+            <circle class="star" cx="60" cy="150" r="3.5"/>
+            <circle class="star big" cx="140" cy="150" r="4"/>
+            <circle class="star" cx="100" cy="25" r="2.5"/>
+            <circle class="star" cx="100" cy="125" r="2"/>
+          </svg>
+          <div class="meta">Winter · Northern sky</div>
+          <h3>Orion</h3>
+          <p>The Hunter. Look for three bright stars in a straight line — the Belt — with a red shoulder (Betelgeuse) and a blue foot (Rigel). The middle "star" of the sword is the Orion Nebula.</p>
+        </div>
+
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <line class="line" x1="40" y1="50" x2="75" y2="40"/>
+            <line class="line" x1="75" y1="40" x2="80" y2="80"/>
+            <line class="line" x1="80" y1="80" x2="45" y2="95"/>
+            <line class="line" x1="45" y1="95" x2="40" y2="50"/>
+            <line class="line" x1="80" y1="80" x2="120" y2="95"/>
+            <line class="line" x1="120" y1="95" x2="160" y2="110"/>
+            <circle class="star" cx="40" cy="50" r="3"/>
+            <circle class="star" cx="75" cy="40" r="3"/>
+            <circle class="star big" cx="80" cy="80" r="3.5"/>
+            <circle class="star" cx="45" cy="95" r="3"/>
+            <circle class="star" cx="120" cy="95" r="3"/>
+            <circle class="star" cx="160" cy="110" r="3"/>
+          </svg>
+          <div class="meta">Spring–Summer · Northern sky</div>
+          <h3>Ursa Major (Big Dipper)</h3>
+          <p>The Great Bear. The two stars at the front of the bowl point straight to Polaris, the North Star — the most useful pointer in the sky.</p>
+        </div>
+
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <polyline class="line" points="30,90 65,40 100,95 135,40 170,90" fill="none"/>
+            <circle class="star big" cx="30" cy="90" r="3.5"/>
+            <circle class="star" cx="65" cy="40" r="3"/>
+            <circle class="star big" cx="100" cy="95" r="4"/>
+            <circle class="star" cx="135" cy="40" r="3"/>
+            <circle class="star big" cx="170" cy="90" r="3.5"/>
+          </svg>
+          <div class="meta">Autumn–Winter · Northern sky</div>
+          <h3>Cassiopeia</h3>
+          <p>The Queen. A bright "W" (or "M") directly opposite the Big Dipper across Polaris. Easy to spot even from cities.</p>
+        </div>
+
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <circle class="star big" cx="95" cy="40" r="3.5"/>
+            <circle class="star" cx="85" cy="55" r="3"/>
+            <circle class="star" cx="105" cy="55" r="3"/>
+            <circle class="star" cx="78" cy="72" r="2.8"/>
+            <circle class="star" cx="95" cy="70" r="3.2"/>
+            <circle class="star" cx="112" cy="72" r="2.8"/>
+            <circle class="star" cx="88" cy="88" r="2.6"/>
+            <circle class="star" cx="102" cy="88" r="2.6"/>
+          </svg>
+          <div class="meta">Winter · Northern sky</div>
+          <h3>The Pleiades</h3>
+          <p>The Seven Sisters. A tiny, tight cluster in Taurus that looks like a miniature dipper. Binoculars turn it into dozens of stars.</p>
+        </div>
+
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <polyline class="line" points="60,30 75,55 95,70 105,95 95,120 80,140 60,150" fill="none"/>
+            <circle class="star" cx="60" cy="30" r="3"/>
+            <circle class="star big" cx="75" cy="55" r="4"/>
+            <circle class="star" cx="95" cy="70" r="3"/>
+            <circle class="star" cx="105" cy="95" r="3"/>
+            <circle class="star" cx="95" cy="120" r="3"/>
+            <circle class="star" cx="80" cy="140" r="3"/>
+            <circle class="star" cx="60" cy="150" r="3"/>
+          </svg>
+          <div class="meta">Summer · Northern sky</div>
+          <h3>Scorpius</h3>
+          <p>The Scorpion. A curving body ending in a stinger, with the red supergiant Antares as its heart. Best on warm July nights.</p>
+        </div>
+
+        <div class="const-card reveal">
+          <svg viewBox="0 0 200 160" aria-hidden="true">
+            <line class="line" x1="100" y1="30" x2="100" y2="130"/>
+            <line class="line" x1="55" y1="80" x2="145" y2="80"/>
+            <circle class="star big" cx="100" cy="30" r="4"/>
+            <circle class="star big" cx="100" cy="130" r="3.5"/>
+            <circle class="star big" cx="55" cy="80" r="3.5"/>
+            <circle class="star big" cx="145" cy="80" r="3.5"/>
+            <circle class="star" cx="100" cy="80" r="2.5"/>
+          </svg>
+          <div class="meta">Year-round · Southern sky</div>
+          <h3>Southern Cross (Crux)</h3>
+          <p>The smallest constellation, but one of the brightest. Its long axis points toward the south celestial pole — a navigator's compass.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="guide">
+    <div class="container">
+      <div class="section-label reveal">04 · Begin</div>
+      <h2 class="section-title reveal">Start stargazing tonight</h2>
+      <p class="section-lede reveal">No telescope, no expertise, no dark-sky reserve required. Just you, the dark, and a little patience.</p>
+      <div class="guide">
+        <div class="step reveal">
+          <div class="step-num">1</div>
+          <div><h3>Check the moon and the weather</h3><p>A new or thin-crescent moon means darker skies and more stars. Clear, dry nights are best; high clouds ruin everything.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">2</div>
+          <div><h3>Find the darkest spot you can</h3><p>Drive 20–30 minutes from city lights if you can. Even a backyard or park helps. Face away from streetlights.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">3</div>
+          <div><h3>Let your eyes adapt</h3><p>Give it 20–30 minutes without bright screens. Your eyes will reveal ten times more stars. Use a red flashlight if you need light.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">4</div>
+          <div><h3>Start with the naked eye</h3><p>No equipment beats your own vision for the big picture. Learn the sky's shape before magnifying it.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">5</div>
+          <div><h3>Learn one constellation at a time</h3><p>Pick Orion or the Big Dipper. Find it, then use it as a handle to find its neighbors. One per night is plenty.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">6</div>
+          <div><h3>Bring comfort</h3><p>A reclining chair or blanket, warm layers, a thermos. Cold, stiff stargazers quit early. Comfortable ones stay.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">7</div>
+          <div><h3>Use an app, lightly</h3><p>Stellarium, SkySafari, or Star Walk are great teachers. Use them to identify, then put the phone away and look.</p></div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">8</div>
+          <div><h3>Be patient and keep a log</h3><p>Write down what you saw and when. The sky rewards the people who show up repeatedly.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="big">Look Up</div>
+  <p>Made with wonder. Go outside tonight. · The stars are always there — even in daylight, even behind clouds.</p>
+</footer>
+
+<script>
+  // Starfield
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  let shooting = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initStars();
+  }
+  function initStars() {
+    const count = Math.floor((canvas.width * canvas.height) / 3200);
+    stars = [];
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.2,
+        base: Math.random() * 0.55 + 0.25,
+        tw: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.022 + 0.004,
+        color: Math.random() > 0.88
+          ? (Math.random() > 0.5 ? '#a78bfa' : '#7dd3fc')
+          : (Math.random() > 0.92 ? '#f4c95d' : '#ffffff')
+      });
+    }
+  }
+  function spawnShooting() {
+    if (Math.random() < 0.004) {
+      shooting.push({
+        x: Math.random() * canvas.width * 0.7,
+        y: Math.random() * canvas.height * 0.35,
+        vx: 7 + Math.random() * 7,
+        vy: 2.5 + Math.random() * 3.5,
+        life: 0,
+        max: 50 + Math.random() * 40
+      });
+    }
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      s.tw += s.speed;
+      const alpha = s.base + Math.sin(s.tw) * 0.32;
+      ctx.globalAlpha = Math.max(0.08, Math.min(1, alpha));
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    spawnShooting();
+    for (let i = shooting.length - 1; i >= 0; i--) {
+      const sh = shooting[i];
+      sh.x += sh.vx; sh.y += sh.vy; sh.life++;
+      const t = sh.life / sh.max;
+      const alpha = t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85;
+      ctx.globalAlpha = Math.max(0, alpha);
+      const grad = ctx.createLinearGradient(sh.x, sh.y, sh.x - sh.vx * 9, sh.y - sh.vy * 9);
+      grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(sh.x - sh.vx * 9, sh.y - sh.vy * 9);
+      ctx.stroke();
+      if (sh.life > sh.max) shooting.splice(i, 1);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
